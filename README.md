@@ -22,12 +22,12 @@ The data is sourced directly from the publicly available government document iss
 This project is shared under the **CC0 1.0 Universal (Public Domain Dedication)**.  
 The visualization is free to use, share, and adapt without restriction.
 
-## Data Transparency
+## Data Transparency 📊 
 
 The `clean-data.csv` file is included in this repository to ensure full transparency regarding the data sources and processing steps used in generating the interactive map.
 This allows users to reproduce, verify, or further develop the visualization based on the official values specified by the German Federal Ministry of the Interior (BMI) in the ARVVwV 2025 regulation.
 
-## Known Data Adjustments and Limitations
+## Known Data Adjustments and Limitations ‼️ 
 
 - Some countries and territories do NOT have complete or standardized spatial representations in the official "shapefile" used for the visualization (this very well could be a fault of my own merging skills).
 To ensure their inclusion in the map, **approximate centroid points** were manually coded for the following cases:
