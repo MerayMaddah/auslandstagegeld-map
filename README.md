@@ -57,4 +57,4 @@ Or, alternatively, you can open an **Issue** if you:
 - Encounter technical problems with the interactive map.
 
 All contributions should maintain the project's focus on transparency, data authenticity, and open accessibility.
-Vielen Dank im Voraus an alle, die zur Verbesserung dieser Datenquelle beitragen können.
+Un vielen Dank im Voraus an alle, die zur Verbesserung dieser Datenquelle beitragen können!! :)
