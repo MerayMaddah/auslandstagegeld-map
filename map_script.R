@@ -65,7 +65,7 @@ if (nrow(unmatched_iso) > 0) {
 
 # ---------------------------
 # 4. Add Missing Countries Manually (France, Norway, Kosovo, French Guiana)
-# This step is crucial since the shape file is NOT recognizing France, Norway or Kosovo.
+# This step is crucial since the shape file is NOT recognizing France, Norway or Kosovo. I hard coded French Guiana to the csv file since it wasn't in the PDF document.
 # ---------------------------
 template <- world[1, ]
 forced_countries <- template[rep(1, 4), ]
