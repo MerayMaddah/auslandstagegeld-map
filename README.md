@@ -6,8 +6,8 @@ The data is sourced directly from the publicly available government document iss
 
 ## Key Features
 - Interactive Leaflet-based world map.
-- Visual representation of daily and overnight allowances for over 190 countries.
-- Color-coded per diem ranges with detailed tooltips.
+- Visual representation of daily and overnight allowances for over 180 countries/territories.
+- Color-coded per diem ranges.
 - Data authenticity based on official German government sources.
 
 ## Data Source
