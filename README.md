@@ -19,7 +19,8 @@ The data is sourced directly from the publicly available government document iss
 [Click here to view the interactive map](https://meraymaddah.github.io/auslandstagegeld-map/)
 
 ## License  
-This project is shared under the _CC0 1.0 Universal (Public Domain Dedication)_
+This project is shared under the _CC0 1.0 Universal (Public Domain Dedication)_.
+
 The visualization is free to use, share, and adapt without restriction — all while crediting the original creator (me! 😊)
 
 ## Data Transparency 📊 
