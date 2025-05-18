@@ -2,7 +2,7 @@
 
 This repository hosts an interactive map visualizing the official **Auslandstage- und Auslandsübernachtungsgelder (per diem and accommodation allowances)** as specified by the **German Federal Ministry of the Interior (BMI)** in the **ARVVwV 2025 regulation**.
 
-The data is sourced directly from the publicly available government document issued on **October 22, 2024**, and effective from **January 1, 2025**. This ensures that the information presented is authentic and reflects the latest official allowances for international business travel as per §16 of the Bundesreisekostengesetz (BRKG).
+The data is sourced directly from the publicly available government document issued on **22 October 2024**, and effective from **01 January 2025**. This ensures that the information presented is authentic and reflects the latest official allowances for international business travel as per §16 of the Bundesreisekostengesetz (BRKG).
 
 ## Key Features
 - Interactive Leaflet-based world map.
