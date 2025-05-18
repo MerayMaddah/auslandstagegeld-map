@@ -27,7 +27,7 @@ The visualization is free to use, share, and adapt without restriction — all w
 
 The `clean-data.csv` file is included in this repository to ensure full transparency regarding the data sources and processing steps used in generating the interactive map.
 This allows users to reproduce, verify, or further develop the visualization based on the official values specified by the German Federal Ministry of the Interior (BMI) in the ARVVwV 2025 regulation.
- - Raw R script for transparency and replication here 👉 [Download the R script here](./map_script.R)
+ - Raw R script for transparency and replication of the intercative map is here 👉 [Download the R script here](./map_script.R)
 
 ## Known Data Adjustments/Limitations ‼️ 
 
