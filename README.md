@@ -44,9 +44,9 @@ To ensure their inclusion in the map, **approximate centroid points** were manua
 
 ## Contributing!!
 
-Contributions to improve data accuracy, visualization design, or functionality are very welcome!
+Contributions to improve data accuracy, visualization design, or functionality are very welcome! (encouraged even)
 
-If you would like to contribute:
+If you would like to, please do the following:
 
 1. **Fork** this repository.
 2. Create a new **branch** for your feature or fix.
@@ -59,4 +59,5 @@ Or, alternatively, you can open an **Issue** if you:
 - Encounter technical problems with the interactive map.
 
 All contributions should maintain the project's focus on transparency, data authenticity, and open accessibility.
+
 Und vielen Dank im Voraus an alle, die zur Verbesserung dieser Datenquelle beitragen können!! :)
