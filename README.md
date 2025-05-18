@@ -20,7 +20,7 @@ The data is sourced directly from the publicly available government document iss
 
 ## License  
 This project is shared under the **CC0 1.0 Universal (Public Domain Dedication)**.  
-The visualization is free to use, share, and adapt without restriction.
+The visualization is free to use, share, and adapt without restriction -- all while crediting the original creator (me! 😊)
 
 ## Data Transparency 📊 
 
