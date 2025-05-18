@@ -52,9 +52,9 @@ If you would like to contribute:
 4. Open a **Pull Request** explaining your proposed changes.
 
 Or, alternatively, you can open an **Issue** if you:
-> Notice discrepancies in the data.
-> Have suggestions for improving the visualization.
-> Encounter technical problems with the interactive map.
+- Notice discrepancies in the data.
+- Have suggestions for improving the visualization.
+- Encounter technical problems with the interactive map.
 
 All contributions should maintain the project's focus on transparency, data authenticity, and open accessibility.
-Thank you for helping improve this resource!
+Vielen Dank im Voraus an alle, die zur Verbesserung dieser Datenquelle beitragen können.
