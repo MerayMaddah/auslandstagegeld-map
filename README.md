@@ -11,9 +11,9 @@ The data is sourced directly from the publicly available government document iss
 - Data authenticity based on official German government sources.
 
 ## Data Source
-- **Official Document:** ARVVwV 2025 (Allgemeine Verwaltungsvorschrift)  
-- **Date Issued:** 22 October 2024  
-- **Effective From:** 01 January 2025  
+- **Official Document:** ARVVwV 2025 (Allgemeine Verwaltungsvorschrift)
+- **Date Issued:** 22 October 2024
+- **Effective From:** 01 January 2025
 
 ## Live Map  
 [Click here to view the interactive map](https://meraymaddah.github.io/auslandstagegeld-map/)
