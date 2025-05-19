@@ -42,7 +42,7 @@ To ensure their inclusion in the map, **approximate centroid points** were manua
 
 - All adjustments are clearly documented in the data processing scripts and visualization code.
 
-## Contributing!!
+## Contributing 💡
 
 Contributions to improve data accuracy, visualization design, or functionality are very welcome! (encouraged even)
 
