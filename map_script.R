@@ -164,3 +164,134 @@ map_object <- leaflet() %>%
 
 # Final step::::: Export as self-contained HTML for GitHub pages hosting
 saveWidget(map_object, "index.html", selfcontained = TRUE)
+
+
+
+
+# ================================
+# Auslandstagegeld Visualization/Plot Generation:
+## Scatter and Faceted Plots for Countries With +1 Cities/Städte
+# ================================
+
+# Load Required Libraries
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(scales)
+library(ggplot2)
+
+# 1. Load the csv.file:::
+df <- read_csv("clean-data.csv") %>%
+  mutate(
+    display     = str_to_title(str_replace_all(namen, "_", " ")),
+    city_label  = if_else(type == "Stadt", str_to_title(str_replace_all(ort, "_", " ")), NA_character_),
+    type        = factor(type, levels = c("Land", "Stadt"))
+  )
+
+# Identify countries that have at least 1 city:
+has_cities <- df %>%
+  filter(type == "Stadt") %>%
+  pull(display) %>%
+  unique()
+has_cities
+
+# ========================
+# 2. Plot 1: Overall Scatter Plot
+# ========================
+p1 <- ggplot(df, aes(
+  x = auslandstagegeld,
+  y = auslandsuebernachtungsgeld,
+  colour = type,
+  shape  = type
+)) +
+  geom_point(size = 3, alpha = 0.8) +
+  # Add the non-overlapping city labels
+  geom_text_repel(
+    data = df %>% filter(type == "Stadt"),
+    aes(label = str_to_title(str_replace_all(ort, "_", " "))), 
+    size = 3.5, 
+    color = "dodgerblue4",
+    max.overlaps = 55,
+    box.padding = 0.5,
+    point.padding = 0.5
+  ) +
+  scale_colour_manual(values = c(Land = "brown4", Stadt = "dodgerblue4")) +
+  scale_shape_manual(values = c(Land = 19, Stadt = 17)) +
+  labs(
+    x = "Tagesgeld (€)",
+    y = "Übernachtungsgeld (€)",
+    colour = "",
+    shape  = "",
+    title = "Tages- vs. Übernachtungsgeld\nLänder (Braun/Kreis) vs. Städte (Blau/Dreieck)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom")
+
+p1
+
+## Warning message: Identify which countries have the NAs
+## Belize, French Guiana, Somalia and Suriname do not have values in the official regulation
+na_row <- df %>%
+  filter(is.na(auslandstagegeld) | is.na(auslandstagegeld))
+na_row
+
+
+# ========================
+# 3. Plot 2: Faceted Scatter Plot with Country-Specific Colors
+# ========================
+
+# Standardize facet axis ranges
+x_range <- range(df$auslandstagegeld, na.rm = TRUE)
+y_range <- range(df$auslandsuebernachtungsgeld, na.rm = TRUE)
+
+# Assign a distinct color to each country with cities
+country_colors <- hue_pal()(length(has_cities))
+names(country_colors) <- has_cities
+
+p2 <- ggplot(
+  df %>% filter(display %in% has_cities),
+  aes(
+    x = auslandstagegeld,
+    y = auslandsuebernachtungsgeld,
+    colour = display,
+    shape  = type
+  )
+) +
+  geom_point(size = 2) +
+  
+  # Add city labels for cities/Städte only
+  geom_text_repel(
+    data = . %>% filter(type == "Stadt"),
+    aes(label = str_to_title(str_replace_all(ort, "_", " "))),  
+    size = 2.5,
+    box.padding = 0.15,
+    point.padding = 0.15,
+    segment.size = 0.2,
+    segment.alpha = 0.5,
+    max.overlaps = 50,
+    min.segment.length = 0,
+    force = 0.3,
+    force_pull = 0.5
+  ) +
+  
+  scale_colour_manual(values = country_colors) +
+  scale_shape_manual(values = c(Land = 19, Stadt = 17)) +
+  
+  # Standardized axis limits across facets
+  facet_wrap(~ display, scales = "fixed", ncol = 4) +
+  scale_x_continuous(limits = x_range) +
+  scale_y_continuous(limits = y_range) +
+  
+  labs(
+    x = "Tagesgeld (€)",
+    y = "Übernachtungsgeld (€)",
+    title = "Tages- vs. Übernachtungsgeld pro Land und seinen Städten"
+  ) +
+  
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "none",
+    strip.text      = element_text(face = "bold")
+  )
+
+p2
