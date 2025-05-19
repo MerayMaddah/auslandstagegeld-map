@@ -41,6 +41,7 @@ To ensure their inclusion in the map, **approximate centroid points** were manua
 - These adjustments ensure that official per diem as well as accommodation allowances for these locations are still properly visualized, even though their precise geographic boundaries are not displayed.
 
 - All adjustments are clearly documented in the data processing scripts and visualization code.
+- I'd recommend that if a user is proficient in QGIS or ArcGIS, the map's visluzation would be thoroughly better and the coordinates would be more specific. As I am still a beginner in these softwares, R code is used instead with the required packages.
 
 ## Contributing 💡
 
