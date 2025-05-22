@@ -9,14 +9,15 @@
 # 1. Install and Load Packages
 # ---------------------------
 install.packages(c(
-  "leaflet", "dplyr", "readr",
+  "leaflet", "dplyr", "readr", "tidyr",
   "rnaturalearth", "rnaturalearthdata",
   "sf", "htmltools", "htmlwidgets", "stringr"
 ))
 
 library(leaflet)
 library(dplyr)
-library(readr)
+library(reader)
+library(tidyr)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(sf)
@@ -27,81 +28,113 @@ library(htmlwidgets)
 # ---------------------------
 # 2. Load and Prepare Data
 # ---------------------------
-clean_data <- read.csv("clean-data.csv")
 
-country_data <- clean_data %>%
-  filter(ort == "sonst") %>%
-  mutate(
-    iso_a3       = str_trim(as.character(iso_a3)),
-    country      = tolower(namen),
-    display_name = str_to_title(namen)
-  )
+table_data <- pdftools::pdf_text("C:/Users/David/Downloads/arvvwv_2025_pdf.pdf") %>% 
+  tibble(.name_repair = ~ c("text")) %>% 
+  mutate(page = row_number(),
+         text = text %>% str_split("\\n")) %>% 
+  unnest(cols = c(text)) %>% 
+  mutate(line = row_number()) %>% 
+  filter(line > 58,
+         line < 362,
+         !str_detect(text, regex("Auslands|Ort|Euro")),
+         nchar(text) > 0) %>% 
+  separate_wider_delim(text, regex("\\s{6,}"), 
+                       names = c("land_ort", "auslandstagegeld", "auslandsuebernachtungsgeld", "trash"), 
+                       too_few = "align_start") %>% 
+  filter(nchar(land_ort) > 0) %>% 
+  select(land_ort:auslandsuebernachtungsgeld) %>% 
+  separate_wider_delim(land_ort, regex("\\s{2,}"), names = c("land", "ort"), too_few = "align_start") %>% 
+  mutate(land = ifelse(nchar(land) == 0, NA_character_, land),
+         land = case_when(land == "Philippinen (3)" ~ "Philippinen",
+                          land == "Trinidad und Tobago (4)" ~ "Trinidad und Tobago",
+                          TRUE ~ land),
+         ort = case_when(is.na(ort) |
+                           ort == "im Übrigen" ~ "generell",
+                         ort == "Rom (2)" ~ "Rom",
+                         ort == "Paris sowie die Départements der Île de France (1)" ~ "Paris",
+                         TRUE ~ ort),
+         auslandsuebernachtungsgeld = auslandsuebernachtungsgeld %>% as.numeric(),
+         auslandstagegeld = auslandstagegeld %>% as.numeric()) %>% 
+  fill(land, .direction = "down") %>% 
+  drop_na()
 
-world <- ne_countries(scale = "medium", returnclass = "sf") %>%
-  mutate(iso_a3 = str_trim(as.character(iso_a3)))
+
+footnote_data <- table_data %>% 
+  filter(land %in% c("Philippinen", "Trinidad und Tobago") |
+         ort == "Rom") %>% 
+  slice(1:3, rep(3, 6)) %>% 
+  mutate(ort = "generell",
+         land = c("Vatikanstadt", "Mikronesien", "Antigua und Barbuda", 
+         "Dominica", "Grenada", "Guyana", "St. Kitts und Nevis", "St. Lucia", 
+         "St. Vincent und Grenadinen"))
+
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+cities <- ne_download(type = "populated_places", scale = "medium", returnclass = "sf")
+subunits <- ne_download(type = "map_subunits", scale = "medium", returnclass = "sf")
+
+
+clean_data <- bind_rows(table_data, footnote_data) 
+
+
+country_data <- clean_data %>% 
+  filter(ort == "generell") %>%
+  mutate(land_merge = case_when(land == "Botsuana" ~ "Botswana",
+                                land == "China" ~ "Volksrepublik China",
+                                land == "Côte d'Ivoire" ~ "Elfenbeinküste",
+                                land == "Kongo, Demokratische Republik" ~ "Demokratische Republik Kongo",
+                                land == "Kongo, Republik" ~ "Republik Kongo",
+                                land == "Korea, Demokratische Volksrepublik" ~ "Nordkorea",
+                                land == "Korea, Republik" ~ "Südkorea",
+                                land == "Marshall Inseln" ~ "Marshallinseln",
+                                land == "Moldau, Republik" ~ "Republik Moldau",
+                                land == "Russische Föderation" ~ "Russland",
+                                land == "Sao Tomé und Principe" ~ "São Tomé und Príncipe",
+                                land == "Saudi Arabien" ~ "Saudi-Arabien",
+                                land == "Slowakische Republik" ~ "Slowakei",
+                                land == "Taiwan" ~ "Republik China",
+                                land == "Tschechische Republik" ~ "Tschechien",
+                                land == "Vereinigte Staaten von Amerika (USA)" ~ "Vereinigte Staaten",
+                                land == "Vereinigtes Königreich von Großbritannien und Nordirland" ~ "Vereinigtes Königreich",
+                                land == "Zypern" ~ "Republik Zypern",
+                                land == "Mikronesien" ~ "Föderierte Staaten von Mikronesien",
+                                land == "St. Vincent und Grenadinen" ~ "St. Vincent und die Grenadinen",
+                                TRUE ~ land))
+
+
+city_data <- clean_data %>% 
+  filter(ort != "generell") %>%
+  mutate(city_merge = case_when(ort == "Brasilia" ~ "Brasília",
+                                ort == "Sao Paulo" ~ "São Paulo",
+                                ort == "Kanton" ~ "Guangzhou",
+                                ort == "Bangalore" ~ "Bengaluru",
+                                ort == "Neu Delhi" ~ "Delhi",
+                                ort == "Osaka" ~ "Ōsaka",
+                                #ort == "Breslau" ~ "",
+                                ort == "St. Petersburg" ~ "Sankt Petersburg",
+                                ort == "Djidda" ~ "Dschidda",
+                                ort == "Washington, D. C." ~ "Washington",
+                                TRUE ~ ort))
+
+
+subunit_data <- clean_data %>% 
+  filter(ort == "Kanarische Inseln"|
+           ort == "Palma de Mallorca") %>%
+  mutate(subunit_merge = case_when(ort == "Kanarische Inseln" ~ "Kanarische Inseln",
+                                ort == "Palma de Mallorca" ~ "Balearische Inseln",
+                                TRUE ~ ort))
 
 # ---------------------------
-# 3. Data Diagnostics
+# 3. Merge and Prepare Map Data
 # ---------------------------
+world_data <- world %>% left_join(country_data, by = c("name_de" = "land_merge"))
 
-# Check for missing ISO codes
-# Using ISO - Code Alpha-3
-missing_iso <- country_data %>% filter(is.na(iso_a3) | iso_a3 == "")
-if (nrow(missing_iso) > 0) {
-  print("Missing ISO Codes Detected:")
-  print(missing_iso %>% select(namen, iso_a3))
-} else {
-  print("All ISO codes are present in country_data.")
-}
+cities_data <- cities %>% left_join(city_data, by = c("NAME_DE" = "city_merge")) %>% 
+  filter(!is.na(ort))
 
-# Check for unmatched ISO codes between data and shapefile
-unmatched_iso <- anti_join(country_data, world, by = "iso_a3")
-if (nrow(unmatched_iso) > 0) {
-  print("Unmatched ISO Codes Found:")
-  print(unmatched_iso %>% select(namen, iso_a3))
-} else {
-  print("All ISO codes successfully match with shapefile.")
-}
-
-# ---------------------------
-# 4. Add Missing Countries Manually (France, Norway, Kosovo, French Guiana)
-# This step is crucial since the shape file is NOT recognizing France, Norway or Kosovo. I hard coded French Guiana to the csv file since it wasn't in the PDF document.
-# ---------------------------
-template <- world[1, ]
-forced_countries <- template[rep(1, 4), ]
-
-forced_countries$iso_a3    <- c("FRA", "NOR", "XKX", "GUF")
-forced_countries$name      <- c("frankreich", "norwegen", "kosovo", "französisch_guayana")
-forced_countries$name_long <- c("Frankreich", "Norwegen", "Kosovo", "Französisch Guayana")
-
-coords <- list(
-  c(2.2137, 46.2276),   # > France
-  c(8.4689, 60.4720),   # > Norway
-  c(20.9020, 42.6026),  # > Kosovo
-  c(-53.1258, 3.9339)   # > French Guiana
-)
-
-forced_countries$geometry <- st_sfc(
-  st_point(coords[[1]]),
-  st_point(coords[[2]]),
-  st_point(coords[[3]]),
-  st_point(coords[[4]]),
-  crs = st_crs(world)
-)
-
-# Append manually created countries
-world <- rbind(world, forced_countries)
-
-
-
-
-# ---------------------------
-# 5. Merge and Prepare Map Data
-# ---------------------------
-map_data <- left_join(world, country_data, by = "iso_a3")
-
-poly_data  <- map_data %>% filter(st_geometry_type(.) %in% c("POLYGON", "MULTIPOLYGON"))
-point_data <- map_data %>% filter(st_geometry_type(.) == "POINT")
+subunits_data <- subunits %>% left_join(subunit_data, by = c("NAME_DE" = "subunit_merge")) %>% 
+  filter(!is.na(ort))
 
 # Define color bins for the choropleth map
 bins <- c(0, 20, 30, 40, 50, 60, 70, 100)
@@ -114,46 +147,61 @@ pal_bin <- colorBin(
 
 
 
-
 # ---------------------------
-# 6. Build and Save Interactive Map
+# 4. Build and Save Interactive Map
 # ---------------------------
 map_object <- leaflet() %>%
   addTiles() %>%
   addPolygons(
-    data        = poly_data,
+    data        = world_data,
     fillColor   = ~pal_bin(auslandstagegeld),
     weight      = 1,
     color       = "white",
     fillOpacity = 0.7,
     label       = lapply(
       paste0(
-        "<strong>", poly_data$display_name, "</strong><br/>",
-        "Tagegeld: €", poly_data$auslandstagegeld, "<br/>",
-        "Übernachtungsgeld: €", poly_data$auslandsuebernachtungsgeld
+        "<strong>", world_data$name_de, "</strong><br/>",
+        "Tagegeld: €", world_data$auslandstagegeld, "<br/>",
+        "Übernachtungsgeld: €", world_data$auslandsuebernachtungsgeld
+      ),
+      htmltools::HTML
+    ),
+    highlightOptions = highlightOptions(color = "black", weight = 2)
+  ) %>%
+  addPolygons(
+    data        = subunits_data,
+    fillColor   = ~pal_bin(auslandstagegeld),
+    weight      = 1,
+    color       = "white",
+    fillOpacity = 0.7,
+    label       = lapply(
+      paste0(
+        "<strong>", subunits_data$NAME_DE, "</strong><br/>",
+        "Tagegeld: €", subunits_data$auslandstagegeld, "<br/>",
+        "Übernachtungsgeld: €", subunits_data$auslandsuebernachtungsgeld
       ),
       htmltools::HTML
     ),
     highlightOptions = highlightOptions(color = "black", weight = 2)
   ) %>%
   addCircleMarkers(
-    data      = point_data,
+    data      = cities_data,
     radius    = 6,
     fillColor = "blue",
     fillOpacity = 0.8,
     stroke    = FALSE,
     label     = lapply(
       paste0(
-        "<strong>", point_data$display_name, "</strong><br/>",
-        "Tagegeld: €", point_data$auslandstagegeld, "<br/>",
-        "Übernachtungsgeld: €", point_data$auslandsuebernachtungsgeld
+        "<strong>", cities_data$NAME_DE, "</strong><br/>",
+        "Tagegeld: €", cities_data$auslandstagegeld, "<br/>",
+        "Übernachtungsgeld: €", cities_data$auslandsuebernachtungsgeld
       ),
       htmltools::HTML
     )
-  ) %>%
+  )  %>%
   addLegend(
     pal       = pal_bin,
-    values    = poly_data$auslandstagegeld,
+    values    = world_data$auslandstagegeld,
     title     = "Auslandstagegeld (€)",
     opacity   = 0.7,
     labFormat = labelFormat(prefix = "€")
