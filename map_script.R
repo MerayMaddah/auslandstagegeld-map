@@ -11,12 +11,13 @@
 install.packages(c(
   "leaflet", "dplyr", "readr", "tidyr",
   "rnaturalearth", "rnaturalearthdata",
-  "sf", "htmltools", "htmlwidgets", "stringr"
+  "sf", "htmltools", "htmlwidgets", "stringr",
+  "pdftools", "ggplot2", "ggrepel" 
 ))
 
 library(leaflet)
 library(dplyr)
-library(reader)
+library(readr)
 library(tidyr)
 library(rnaturalearth)
 library(rnaturalearthdata)
@@ -24,6 +25,8 @@ library(sf)
 library(htmltools)
 library(stringr)
 library(htmlwidgets)
+library(ggplot2)
+library(ggrepel)
 
 # ---------------------------
 # 2. Load and Prepare Data
@@ -75,7 +78,8 @@ cities <- ne_download(type = "populated_places", scale = "medium", returnclass =
 subunits <- ne_download(type = "map_subunits", scale = "medium", returnclass = "sf")
 
 
-clean_data <- bind_rows(table_data, footnote_data) 
+clean_data <- bind_rows(table_data, footnote_data) %>% 
+  mutate(type = ifelse(ort == "generell", "Land", "Stadt"))
 
 
 country_data <- clean_data %>% 
@@ -125,14 +129,14 @@ subunit_data <- clean_data %>%
                                 ort == "Palma de Mallorca" ~ "Balearische Inseln",
                                 TRUE ~ ort))
 
+
+
 # ---------------------------
 # 3. Merge and Prepare Map Data
 # ---------------------------
 world_data <- world %>% left_join(country_data, by = c("name_de" = "land_merge"))
-
 cities_data <- cities %>% left_join(city_data, by = c("NAME_DE" = "city_merge")) %>% 
   filter(!is.na(ort))
-
 subunits_data <- subunits %>% left_join(subunit_data, by = c("NAME_DE" = "subunit_merge")) %>% 
   filter(!is.na(ort))
 
@@ -140,7 +144,7 @@ subunits_data <- subunits %>% left_join(subunit_data, by = c("NAME_DE" = "subuni
 bins <- c(0, 20, 30, 40, 50, 60, 70, 100)
 pal_bin <- colorBin(
   palette = "YlOrRd",
-  domain  = poly_data$auslandstagegeld,
+  domain  = world_data$auslandstagegeld,
   bins    = bins,
   pretty  = FALSE
 )
@@ -148,7 +152,7 @@ pal_bin <- colorBin(
 
 
 # ---------------------------
-# 4. Build and Save Interactive Map
+# 6. Build and Save Interactive Map
 # ---------------------------
 map_object <- leaflet() %>%
   addTiles() %>%
@@ -210,7 +214,7 @@ map_object <- leaflet() %>%
 
 
 
-# Final step::::: Export as self-contained HTML for GitHub pages hosting
+# Export as self-contained HTML for GitHub pages hosting
 saveWidget(map_object, "index.html", selfcontained = TRUE)
 
 
@@ -221,32 +225,10 @@ saveWidget(map_object, "index.html", selfcontained = TRUE)
 ## Scatter and Faceted Plots for Countries With +1 Cities/Städte
 # ================================
 
-# Load Required Libraries
-library(tidyverse)
-library(dplyr)
-library(stringr)
-library(scales)
-library(ggplot2)
-
-# 1. Load the csv.file:::
-df <- read_csv("clean-data.csv") %>%
-  mutate(
-    display     = str_to_title(str_replace_all(namen, "_", " ")),
-    city_label  = if_else(type == "Stadt", str_to_title(str_replace_all(ort, "_", " ")), NA_character_),
-    type        = factor(type, levels = c("Land", "Stadt"))
-  )
-
-# Identify countries that have at least 1 city:
-has_cities <- df %>%
-  filter(type == "Stadt") %>%
-  pull(display) %>%
-  unique()
-has_cities
-
 # ========================
-# 2. Plot 1: Overall Scatter Plot
+# 1. Plot 1: Overall Scatter Plot
 # ========================
-p1 <- ggplot(df, aes(
+p1 <- ggplot(clean_data, aes(
   x = auslandstagegeld,
   y = auslandsuebernachtungsgeld,
   colour = type,
@@ -255,8 +237,8 @@ p1 <- ggplot(df, aes(
   geom_point(size = 3, alpha = 0.8) +
   # Add the non-overlapping city labels
   geom_text_repel(
-    data = df %>% filter(type == "Stadt"),
-    aes(label = str_to_title(str_replace_all(ort, "_", " "))), 
+    data = clean_data %>% filter(type == "Stadt"),
+    aes(label = ort), 
     size = 3.5, 
     color = "dodgerblue4",
     max.overlaps = 55,
@@ -276,32 +258,21 @@ p1 <- ggplot(df, aes(
   theme(legend.position = "bottom")
 
 p1
-
-## Warning message: Identify which countries have the NAs
-## Belize, French Guiana, Somalia and Suriname do not have values in the official regulation
-na_row <- df %>%
-  filter(is.na(auslandstagegeld) | is.na(auslandstagegeld))
-na_row
-
+ggsave("p1.jpeg", width = 28, height = 20, units = "cm", dpi = 800)
 
 # ========================
-# 3. Plot 2: Faceted Scatter Plot with Country-Specific Colors
+# 2. Plot 2: Faceted Scatter Plot with Country-Specific Colors
 # ========================
-
-# Standardize facet axis ranges
-x_range <- range(df$auslandstagegeld, na.rm = TRUE)
-y_range <- range(df$auslandsuebernachtungsgeld, na.rm = TRUE)
-
-# Assign a distinct color to each country with cities
-country_colors <- hue_pal()(length(has_cities))
-names(country_colors) <- has_cities
 
 p2 <- ggplot(
-  df %>% filter(display %in% has_cities),
+  clean_data %>% add_count(land) %>% filter(n > 1) %>% 
+    mutate(land = case_when(land == "Vereinigte Staaten von Amerika (USA)" ~ "Vereinigte Staaten",
+                            land == "Vereinigtes Königreich von Großbritannien und Nordirland" ~ "Vereinigtes Königreich",
+                            TRUE ~ land)),
   aes(
     x = auslandstagegeld,
     y = auslandsuebernachtungsgeld,
-    colour = display,
+    colour = land,
     shape  = type
   )
 ) +
@@ -310,7 +281,7 @@ p2 <- ggplot(
   # Add city labels for cities/Städte only
   geom_text_repel(
     data = . %>% filter(type == "Stadt"),
-    aes(label = str_to_title(str_replace_all(ort, "_", " "))),  
+    aes(label = ort),  
     size = 2.5,
     box.padding = 0.15,
     point.padding = 0.15,
@@ -322,13 +293,10 @@ p2 <- ggplot(
     force_pull = 0.5
   ) +
   
-  scale_colour_manual(values = country_colors) +
   scale_shape_manual(values = c(Land = 19, Stadt = 17)) +
   
   # Standardized axis limits across facets
-  facet_wrap(~ display, scales = "fixed", ncol = 4) +
-  scale_x_continuous(limits = x_range) +
-  scale_y_continuous(limits = y_range) +
+  facet_wrap(~ land, scales = "fixed", ncol = 4) +
   
   labs(
     x = "Tagesgeld (€)",
@@ -343,3 +311,4 @@ p2 <- ggplot(
   )
 
 p2
+ggsave("p2.jpeg", width = 28, height = 20, units = "cm", dpi = 800)
